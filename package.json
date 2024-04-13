@@ -52,6 +52,7 @@
     "@types/react-helmet": "^6.1.11",
     "@vitejs/plugin-react": "^4.2.1",
     "@welldone-software/why-did-you-render": "^8.0.1",
+    "dmg-license": "^1.0.11",
     "electron": "^28.2.0",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.0.0",
