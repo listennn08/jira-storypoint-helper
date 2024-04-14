@@ -68,13 +68,30 @@ export function groupByAssignee(
       if (!ticket.assignee || ignoreStatus.includes(ticket.status)) {
         continue
       }
-      if (!assigneeStoryPointsBySprint[ticket.assignee]) {
-        assigneeStoryPointsBySprint[ticket.assignee] = {}
+
+      if (ticket.subtasks) {
+        // if the ticket has subtasks, we need to sum the story points of the subtasks
+        for (const subtask of ticket.subtasks) {
+          if (!subtask.assignee || ignoreStatus.includes(subtask.status)) {
+            continue
+          }
+          if (!assigneeStoryPointsBySprint[subtask.assignee]) {
+            assigneeStoryPointsBySprint[subtask.assignee] = {}
+          }
+          if (!assigneeStoryPointsBySprint[subtask.assignee][sprintItem.key]) {
+            assigneeStoryPointsBySprint[subtask.assignee][sprintItem.key] = 0
+          }
+          assigneeStoryPointsBySprint[subtask.assignee][sprintItem.key] += subtask.story_point || 0
+        }
+      } else {
+        if (!assigneeStoryPointsBySprint[ticket.assignee]) {
+          assigneeStoryPointsBySprint[ticket.assignee] = {}
+        }
+        if (!assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key]) {
+          assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key] = 0
+        }
+        assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key] += ticket.story_point || 0
       }
-      if (!assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key]) {
-        assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key] = 0
-      }
-      assigneeStoryPointsBySprint[ticket.assignee][sprintItem.key] += ticket.story_point || 0
     }
   }
 
