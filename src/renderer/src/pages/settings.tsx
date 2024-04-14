@@ -95,6 +95,9 @@ export const Setting = (): JSX.Element => {
 
       localStorage.setItem('jira-config', JSON.stringify(data))
       addAlerts({ severity: 'success', message: 'Options saved' })
+
+      // reload to refresh CSP meta tag
+      setTimeout(() => window.location.reload(), 500)
     }
 
     reader.readAsText(file)

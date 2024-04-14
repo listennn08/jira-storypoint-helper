@@ -29,7 +29,7 @@ const TicketTabs = (): JSX.Element => {
         })
         .filter((el) => el !== null)
     ) as string[]
-  }, [tickets])
+  }, [])
 
   function handleChange(_event: React.SyntheticEvent, newValue: number): void {
     setSprint(newValue)

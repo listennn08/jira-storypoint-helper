@@ -75,13 +75,30 @@ export default function useFetchData(): UseFetchDataReturn {
   >([])
   const filteredTickets = useMemo(() => {
     return _.chain(tickets)
-      .filter((ticket) => {
-        if (filter.sprint?.length && !filter.sprint.includes(ticket.key)) {
+      .cloneDeep()
+      .map((sprint) => {
+        if (filter.user.length) {
+          sprint.issues = sprint.issues.map((issue) => ({
+            ...issue,
+            subtasks: issue.subtasks?.filter((subtask) =>
+              filter.user.includes(subtask.assignee || '')
+            )
+          }))
+          sprint.issues = sprint.issues.filter((issue) => {
+            if (filter.user.includes(issue.assignee || '')) return true
+            if (issue.subtasks && issue.subtasks.length > 0) return true
+            return false
+          })
+        }
+        return sprint
+      })
+      .filter((sprint) => {
+        if (filter.sprint?.length && !filter.sprint.includes(sprint.key)) {
           return false
         }
         if (
           filter.board.length &&
-          !filter.board.some((board) => ticket.boardTitle.includes(board))
+          !filter.board.some((board) => sprint.boardTitle.includes(board))
         ) {
           return false
         }
@@ -90,12 +107,20 @@ export default function useFetchData(): UseFetchDataReturn {
       .value()
   }, [tickets, filter])
 
-  const userOptions = useMemo(() => _.keys(groupByAssignee(filteredTickets)), [filteredTickets])
-  const boardOptions = useMemo(() => Object.keys(boardMap), [boardMap])
-  const sprintOptions = useMemo(
-    () => filteredTickets.map((ticket) => ticket.key),
-    [filteredTickets]
+  const userOptions = useMemo(
+    () =>
+      _.chain(groupByAssignee(tickets))
+        .keys()
+        .sort((a, b) => {
+          const aLower = a.toLowerCase()
+          const bLower = b.toLowerCase()
+          return aLower.localeCompare(bLower)
+        })
+        .value(),
+    [tickets]
   )
+  const boardOptions = useMemo(() => Object.keys(boardMap), [boardMap])
+  const sprintOptions = useMemo(() => tickets.map((ticket) => ticket.key), [tickets])
 
   async function request<T>(url: string): Promise<T> {
     const { email, apiKey, baseURL } = jiraConfig
