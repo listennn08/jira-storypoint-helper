@@ -1,43 +1,17 @@
+import { useAppStore } from '@renderer/store/appStore'
 import { JiraConfig } from '@renderer/types'
-import { createContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet'
 
-interface AppContextProps {
-  loadedConfig: boolean
-  activeTab: number
-  jiraConfig: JiraConfig
-  setJiraConfig: React.Dispatch<React.SetStateAction<AppContextProps['jiraConfig']>>
-  setActiveTab: React.Dispatch<React.SetStateAction<number>>
-  loadConfig: () => void
-}
-
-const AppContext = createContext<AppContextProps>({
-  loadedConfig: false,
-  activeTab: 0,
-  jiraConfig: {
-    email: '',
-    apiKey: '',
-    baseURL: '',
-    sprintStartWord: '',
-    boards: []
-  },
-  setJiraConfig: () => {},
-  setActiveTab: () => {},
-  loadConfig: () => {}
-})
-
 export const AppContextProvider = ({ children }: { children: React.ReactNode }): JSX.Element => {
-  const [loadedConfig, setLoadedConfig] = useState(false)
-  const [jiraConfig, setJiraConfig] = useState<AppContextProps['jiraConfig']>({
-    email: '',
-    apiKey: '',
-    baseURL: '',
-    sprintStartWord: '',
-    boards: []
-  })
-  const [activeTab, setActiveTab] = useState(
-    localStorage.getItem('active-tab') ? Number(localStorage.getItem('active-tab')) : 0
-  )
+  const jiraConfig = useAppStore((state) => state.jiraConfig)
+  const loadedConfig = useAppStore((state) => state.loadedConfig)
+  const activeTab = useAppStore((state) => state.activeTab)
+  const alerts = useAppStore((state) => state.alerts)
+  const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
+  const setActiveTab = useAppStore((state) => state.setActiveTab)
+  const removeAlerts = useAppStore((state) => state.removeAlerts)
+  const setLoadedConfig = useAppStore((state) => state.loadConfig)
   const [cspMetaTag, setCspMetaTAg] = useState({
     httpEquive: 'Content-Security-Policy',
     content: {
@@ -52,19 +26,18 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }):
   function loadConfig(): void {
     const jiraConfig = localStorage.getItem('jira-config')
     if (jiraConfig) {
-      setJiraConfig(() => {
-        const config = JSON.parse(jiraConfig) as JiraConfig
+      const config = JSON.parse(jiraConfig) as JiraConfig
+      for (const key in config) {
+        setJiraConfigByKey(key as keyof JiraConfig, config[key])
+      }
 
-        setCspMetaTAg((prev) => ({
-          ...prev,
-          content: {
-            ...prev.content,
-            'img-src': [...prev.content['img-src'], `${config.baseURL}/`]
-          }
-        }))
-
-        return config
-      })
+      setCspMetaTAg((prev) => ({
+        ...prev,
+        content: {
+          ...prev.content,
+          'img-src': [...prev.content['img-src'], `${config.baseURL}/`]
+        }
+      }))
     }
 
     setLoadedConfig(true)
@@ -75,33 +48,29 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }):
     localStorage.setItem('active-tab', activeTab.toString())
   }, [activeTab])
 
-  useEffect(() => {
-    loadConfig()
-  }, [])
-
   function redirectToSettingIfConfigNotSet(): void {
     if (!loadedConfig) return
     if (!jiraConfig.email || !jiraConfig.apiKey || !jiraConfig.baseURL) {
-      setActiveTab(2)
+      setActiveTab('/settings')
       return
     }
   }
 
   useEffect(() => {
+    if (!loadedConfig) {
+      loadConfig()
+    }
     redirectToSettingIfConfigNotSet()
   }, [loadedConfig])
 
+  useEffect(() => {
+    setTimeout(() => {
+      removeAlerts(0)
+    }, 2500)
+  }, [alerts])
+
   return (
-    <AppContext.Provider
-      value={{
-        loadedConfig,
-        jiraConfig,
-        setJiraConfig,
-        activeTab,
-        setActiveTab,
-        loadConfig
-      }}
-    >
+    <>
       <Helmet>
         <title>Jira Board</title>
         <meta
@@ -112,8 +81,6 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }):
         />
       </Helmet>
       {isSetCSP && children}
-    </AppContext.Provider>
+    </>
   )
 }
-
-export default AppContext

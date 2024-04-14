@@ -1,18 +1,11 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useContext, useMemo, useState } from 'react'
 import { Box, Tab, Tabs } from '@mui/material'
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view'
-import TreeLabel from './TreeLabel'
-import { Ticket } from '@renderer/types'
+import TreeLabel from '@renderer/components/TreeLabel'
+import TicketContext from '@renderer/context/TicketContext'
 
-interface TicketTabsProps {
-  tickets: Array<{
-    key: string
-    boardTitle: string[]
-    issues: Ticket[]
-  }>
-}
-const TicketTabs = (props: TicketTabsProps): JSX.Element => {
-  const { tickets } = props
+const TicketTabs = (): JSX.Element => {
+  const { tickets } = useContext(TicketContext)
   const [sprint, setSprint] = useState(0)
 
   function a11yProps(index: number): {
@@ -28,9 +21,9 @@ const TicketTabs = (props: TicketTabsProps): JSX.Element => {
   const defaultExpandedItems = useMemo(() => {
     return tickets.flatMap((ticket) =>
       ticket.issues
-        .map((ticket, index) => {
+        .map((ticket) => {
           if (ticket.subtasks) {
-            return index.toString()
+            return ticket.key
           }
           return null
         })
@@ -51,7 +44,7 @@ const TicketTabs = (props: TicketTabsProps): JSX.Element => {
           ))}
         </Tabs>
       </Box>
-      {Object.keys(tickets).map((sprintName, index) => (
+      {tickets.map((ticket, index) => (
         <div
           role="tabpanel"
           key={`tabpanel-${index}`}
@@ -62,17 +55,17 @@ const TicketTabs = (props: TicketTabsProps): JSX.Element => {
           {sprint === index && (
             <Box sx={{ py: 1 }}>
               <SimpleTreeView defaultExpandedItems={defaultExpandedItems}>
-                {tickets[sprintName].issues.map((ticket, index) => (
+                {ticket.issues.map((ticket) => (
                   <TreeItem
-                    label={<TreeLabel ticket={ticket} key={`label-${index}`} />}
-                    key={`${index}`}
-                    itemId={`${index}`}
+                    label={<TreeLabel ticket={ticket} key={`label-${ticket.key}`} />}
+                    key={`${ticket.key}`}
+                    itemId={`${ticket.key}`}
                   >
-                    {ticket.subtasks?.map((subtask: Ticket, subIndex: number) => (
+                    {ticket.subtasks?.map((subtask) => (
                       <TreeItem
-                        label={<TreeLabel ticket={subtask} key={`label-${index}${subIndex}`} />}
-                        key={`xxxasdasd-${index}${subIndex}`}
-                        itemId={`xxxasdasd-${index}${subIndex}`}
+                        label={<TreeLabel ticket={subtask} key={`label-${subtask.key}`} />}
+                        key={subtask.key}
+                        itemId={subtask.key}
                       />
                     ))}
                   </TreeItem>

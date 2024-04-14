@@ -1,14 +1,12 @@
-import { Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
 import { Buffer } from 'buffer'
 import { from, mergeMap, reduce } from 'rxjs'
 import _ from 'lodash'
 import { orderKeyBySprint, groupByAssignee, sortTickets } from './utils'
-import AppContext from './context/AppContext'
+import { CACHE_TIME } from './constants'
 
 import { Issue, Sprint, Ticket, Filter, Board } from './types'
-
-const CACHE_TIME = 1000 * 60 * 5 // 5 minutes
-
+import { useAppStore } from './store/appStore'
 interface UseFetchDataReturn {
   loading: boolean
   error: string
@@ -38,7 +36,9 @@ interface UseFetchDataReturn {
 }
 
 export default function useFetchData(): UseFetchDataReturn {
-  const { jiraConfig, loadedConfig } = useContext(AppContext)
+  const jiraConfig = useAppStore((state) => state.jiraConfig)
+  const loadedConfig = useAppStore((state) => state.loadedConfig)
+  const addAlerts = useAppStore((state) => state.addAlerts)
   const [boardMap, setBoardMap] = useState<
     Record<
       string,
@@ -48,7 +48,7 @@ export default function useFetchData(): UseFetchDataReturn {
       }
     >
   >({})
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [loadingText, setLoadingText] = useState('Fetching data...')
   const [error, setError] = useState('')
 
@@ -162,6 +162,13 @@ export default function useFetchData(): UseFetchDataReturn {
     return boards
   }
 
+  function verifyConfig(): boolean {
+    if (!jiraConfig.email || !jiraConfig.apiKey || !jiraConfig.baseURL) {
+      return false
+    }
+    return true
+  }
+
   async function fetchSprintData(boardId: string, sprintId: number): Promise<Issue[]> {
     const resp = await request<{
       issues: Issue[]
@@ -184,10 +191,6 @@ export default function useFetchData(): UseFetchDataReturn {
       boardId,
       sprints: await Promise.all(
         sprints.map(async (sprint: Sprint) => {
-          // setSprintIdMap((sprintIdMap) => {
-          //   sprintIdMap[sprint.name] = sprint.id
-          //   return sprintIdMap
-          // })
           return {
             ...sprint,
             issues: await fetchSprintData(boardId, sprint.id)
@@ -238,7 +241,7 @@ export default function useFetchData(): UseFetchDataReturn {
       issues: Ticket[]
     }[]
   > {
-    setLoadingText(`Processing data for <b>${boardMap[board.boardId]}</b>...`)
+    setLoadingText(`Processing data for <b>${boardMap[board.boardId].name}</b>...`)
     return board.sprints.map((sprint) => {
       const tickets = processTickets(sprint.issues)
         .filter((ticket) => ticket.type !== 'Sub-task')
@@ -253,8 +256,18 @@ export default function useFetchData(): UseFetchDataReturn {
   }
 
   async function fetchData(): Promise<void> {
+    if (!verifyConfig()) {
+      setError('Please set Jira configuration first')
+      return
+    }
     setLoadingText('Fetching data...')
     setLoading(true)
+
+    if (_.isEmpty(boardMap)) {
+      await getBoardData()
+      setLoading(false)
+      return
+    }
 
     let sprintObj: Record<string, Sprint> = {}
     const $subscriber = from(boards).pipe(
@@ -295,28 +308,43 @@ export default function useFetchData(): UseFetchDataReturn {
     })
   }
 
-  useEffect(() => {
-    if (!loadedConfig) return
-    if (jiraConfig.email && jiraConfig.apiKey && jiraConfig.baseURL) {
-      const ttl = Number(localStorage.getItem('ttl'))
-      const ticketsString = localStorage.getItem('tickets')
-      if (ticketsString && ticketsString !== 'undefined') {
-        const tickets = JSON.parse(ticketsString)
-        if (!_.isEmpty(tickets) && ttl > Date.now()) {
-          console.log('loading data from cache')
-          setTickets(tickets)
-          setLoading(false)
-          return
-        }
-      }
-      getBoardData()
+  function checkCache(): boolean {
+    const ttl = Number(localStorage.getItem('ttl'))
+    const ticketsString = localStorage.getItem('tickets')
+    if (ticketsString && ticketsString !== 'undefined' && ttl > Date.now()) {
+      return true
     }
+    return false
+  }
+  async function getData(): Promise<void> {
+    if (!loadedConfig) return
+    if (!verifyConfig()) {
+      setLoading(false)
+      return
+    }
+    if (checkCache()) {
+      const tickets = JSON.parse(localStorage.getItem('tickets')!)
+      if (!_.isEmpty(tickets)) {
+        addAlerts({
+          severity: 'info',
+          message: 'Data loaded from cache'
+        })
+        setTickets(tickets)
+        setLoading(false)
+        return
+      }
+    }
+    getBoardData()
+  }
+
+  useEffect(() => {
+    getData()
   }, [loadedConfig, jiraConfig])
 
   useEffect(() => {
-    if (_.isEmpty(boardMap)) return
+    if (checkCache()) return
     fetchData()
-  }, [boardMap])
+  }, [boards])
 
   return {
     loading,

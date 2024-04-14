@@ -1,8 +1,8 @@
-import { memo, useContext } from 'react'
+import { ChangeEvent, memo } from 'react'
 import { Grid, TextField, IconButton } from '@mui/material'
 import { Board } from '@renderer/types'
 import { Delete } from '@mui/icons-material'
-import AppContext from '@renderer/context/AppContext'
+import { useAppStore } from '@renderer/store/appStore'
 
 interface BoardItemProps {
   board: Board
@@ -10,7 +10,20 @@ interface BoardItemProps {
 }
 
 const BoardItem: React.FC<BoardItemProps> = ({ board, index }: BoardItemProps) => {
-  const { setJiraConfig } = useContext(AppContext)
+  const boards = useAppStore((state) => state.jiraConfig.boards)
+  const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
+
+  function handleChange(event: ChangeEvent): void {
+    const target = event.target as HTMLInputElement
+    boards[index].name = target.value
+    setJiraConfigByKey('boards', boards)
+  }
+
+  function handleRemove(): void {
+    boards.splice(index, 1)
+    setJiraConfigByKey('boards', boards)
+  }
+
   return (
     <Grid container item xs={12} gap={1} py={1} alignItems="center">
       <Grid item xs={2}>
@@ -25,24 +38,12 @@ const BoardItem: React.FC<BoardItemProps> = ({ board, index }: BoardItemProps) =
           label="Board Name"
           value={board.name}
           fullWidth
-          disabled
+          onChange={handleChange}
         />
       </Grid>
       {/* TODO: change active or inactive */}
       <Grid item xs={1}>
-        <IconButton
-          color="error"
-          onClick={() => {
-            setJiraConfig((prev) => {
-              const newBoards = [...prev.boards]
-              newBoards.splice(index, 1)
-              return {
-                ...prev,
-                boards: newBoards
-              }
-            })
-          }}
-        >
+        <IconButton color="error" onClick={handleRemove}>
           <Delete />
         </IconButton>
       </Grid>

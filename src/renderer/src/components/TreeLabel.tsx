@@ -1,7 +1,7 @@
-import { Ref, forwardRef, memo, useContext } from 'react'
+import { Ref, forwardRef, memo } from 'react'
 import { Avatar, Box, Chip, Link, Typography } from '@mui/material'
-import AppContext from '@renderer/context/AppContext'
 import { Ticket } from '@renderer/types'
+import { useAppStore } from '@renderer/store/appStore'
 
 const colorMap: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
   Done: 'default',
@@ -13,7 +13,7 @@ const colorMap: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
 const TreeLabel = memo(
   forwardRef((props: { ticket: Ticket }, ref: Ref<HTMLLIElement>) => {
     const { ticket } = props
-    const { jiraConfig } = useContext(AppContext)
+    const jiraConfig = useAppStore((state) => state.jiraConfig)
 
     return (
       <Box ref={ref} sx={{ p: 0.5, display: 'flex', justifyContent: 'space-between', gap: 1 }}>

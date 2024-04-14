@@ -1,8 +1,9 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useContext, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
-import { groupByAssignee } from '../utils'
+import { groupByAssignee } from '@renderer/utils'
 import { Ticket } from '@renderer/types'
+import TicketContext from '@renderer/context/TicketContext'
 
 interface StoryPointTableProps {
   tickets: Array<{
@@ -17,13 +18,14 @@ interface StoryPointTableData {
   assignee: string
 }
 
-const StoryPointTable: React.FC<StoryPointTableProps> = ({ tickets }: StoryPointTableProps) => {
+const index: React.FC<StoryPointTableProps> = () => {
+  const { tickets } = useContext(TicketContext)
   const [tableData, setTableData] = useState<StoryPointTableData[]>([])
   const [tableHeaders, setTableHeaders] = useState<string[]>([])
 
   useEffect(() => {
+    if (!tickets) return
     const tableHeaders = tickets.map((ticket) => ticket.key)
-    console.log('tableHeaders', tableHeaders)
     const groupByAssigneeObj = groupByAssignee(tickets)
     setTableHeaders(tableHeaders)
     const data = Object.keys(groupByAssigneeObj).map((user: string) => {
@@ -39,9 +41,17 @@ const StoryPointTable: React.FC<StoryPointTableProps> = ({ tickets }: StoryPoint
   return (
     <Box minWidth="800px">
       <DataGrid
+        autoHeight
         columns={[
-          { field: 'assignee', headerName: 'Assignee', width: 100 },
-          ...tableHeaders.map((header) => ({ field: header, headerName: header, width: 120 }))
+          { field: 'assignee', headerName: 'Assignee', width: 150 },
+          ...tableHeaders.map((header) => ({
+            field: header,
+            headerName: header,
+            width: 150,
+            renderCell: (params) => (
+              <span style={{ opacity: params.value === 0 ? '0.5' : '1' }}>{params.value}</span>
+            )
+          }))
         ]}
         rows={tableData}
         hideFooter
@@ -55,4 +65,4 @@ const StoryPointTable: React.FC<StoryPointTableProps> = ({ tickets }: StoryPoint
   )
 }
 
-export default memo(StoryPointTable)
+export default memo(index)
