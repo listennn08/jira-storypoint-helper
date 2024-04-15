@@ -11,6 +11,12 @@ export interface Ticket {
   subtasks?: Ticket[]
 }
 
+export interface TicketItem {
+  key: string
+  boardTitle: string[]
+  issues: Ticket[]
+}
+
 interface Sprint {
   createdDate: string
   endDate: string

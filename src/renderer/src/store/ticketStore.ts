@@ -1,11 +1,5 @@
 import { create } from 'zustand'
-import { Ticket } from '@renderer/types'
-
-interface TicketItem {
-  key: string
-  boardTitle: string[]
-  issues: Ticket[]
-}
+import { TicketItem } from '@renderer/types'
 
 interface TicketState {
   tickets: Array<TicketItem>

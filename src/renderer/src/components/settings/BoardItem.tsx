@@ -7,21 +7,21 @@ import { useAppStore } from '@renderer/store/appStore'
 interface BoardItemProps {
   board: Board
   index: number
+  onBoardChange: (boards: Board[]) => void
 }
 
-const BoardItem: React.FC<BoardItemProps> = ({ board, index }: BoardItemProps) => {
+const BoardItem: React.FC<BoardItemProps> = ({ board, index, onBoardChange }: BoardItemProps) => {
   const boards = useAppStore((state) => state.jiraConfig.boards)
-  const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
 
   function handleChange(event: ChangeEvent): void {
     const target = event.target as HTMLInputElement
     boards[index].name = target.value
-    setJiraConfigByKey('boards', boards)
+    onBoardChange(boards)
   }
 
   function handleRemove(): void {
     boards.splice(index, 1)
-    setJiraConfigByKey('boards', boards)
+    onBoardChange(boards)
   }
 
   return (

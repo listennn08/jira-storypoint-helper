@@ -30,6 +30,13 @@ import { Board, JiraConfig } from '@renderer/types'
 import { useAppStore } from '@renderer/store/appStore'
 
 export const Setting = (): JSX.Element => {
+  const [localJiraConfig, setLocalJiraConfig] = useState<JiraConfig>({
+    email: '',
+    apiKey: '',
+    baseURL: '',
+    sprintStartWord: '',
+    boards: []
+  })
   const jiraConfig = useAppStore((state) => state.jiraConfig)
   const setJiraConfig = useAppStore((state) => state.setJiraConfig)
   const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
@@ -48,6 +55,12 @@ export const Setting = (): JSX.Element => {
   const [showPassword, setShowPassword] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+  function handleChangeConfig(key: keyof JiraConfig, value: string | Board[]): void {
+    setLocalJiraConfig((prev) => ({
+      ...prev,
+      [key]: value
+    }))
+  }
   function handleClickShowPassword(): void {
     setShowPassword(!showPassword)
   }
@@ -116,7 +129,8 @@ export const Setting = (): JSX.Element => {
   }
 
   function handleSaveOption(): void {
-    localStorage.setItem('jira-config', JSON.stringify(jiraConfig))
+    setJiraConfig(localJiraConfig)
+    localStorage.setItem('jira-config', JSON.stringify(localJiraConfig))
     addAlerts({ severity: 'success', message: 'Options saved' })
     // reload to refresh CSP meta tag
     setTimeout(() => window.location.reload(), 500)
@@ -176,6 +190,7 @@ export const Setting = (): JSX.Element => {
     const config = localStorage.getItem('jira-config')
     if (config) {
       setJiraConfig(JSON.parse(config))
+      setLocalJiraConfig(JSON.parse(config))
     }
   }, [])
 
@@ -227,23 +242,23 @@ export const Setting = (): JSX.Element => {
           <Grid container gap={4} justifyContent="end">
             <TextField
               label="Jira base URL"
-              value={jiraConfig.baseURL}
+              value={localJiraConfig.baseURL}
               required
-              onChange={(e) => setJiraConfigByKey('baseURL', e.target.value)}
+              onChange={(e) => handleChangeConfig('baseURL', e.target.value)}
               fullWidth
             />
             <TextField
               label="Jira account email"
-              value={jiraConfig.email}
+              value={localJiraConfig.email}
               required
-              onChange={(e) => setJiraConfigByKey('email', e.target.value)}
+              onChange={(e) => handleChangeConfig('email', e.target.value)}
               fullWidth
             />
             <TextField
               label="Jira API key"
               type={showPassword ? 'text' : 'password'}
-              value={jiraConfig.apiKey}
-              onChange={(e) => setJiraConfigByKey('apiKey', e.target.value)}
+              value={localJiraConfig.apiKey}
+              onChange={(e) => handleChangeConfig('apiKey', e.target.value)}
               fullWidth
               required
               helperText={
@@ -284,8 +299,8 @@ export const Setting = (): JSX.Element => {
           <Grid container gap={4} justifyContent="end">
             <TextField
               label="Sprint start word"
-              value={jiraConfig.sprintStartWord}
-              onChange={(e) => setJiraConfigByKey('sprintStartWord', e.target.value)}
+              value={localJiraConfig.sprintStartWord}
+              onChange={(e) => handleChangeConfig('sprintStartWord', e.target.value)}
               fullWidth
             />
 
@@ -304,7 +319,7 @@ export const Setting = (): JSX.Element => {
                       {...provided.droppableProps}
                       style={{ opacity: snapshot.isDraggingOver ? 0.5 : 1 }}
                     >
-                      {jiraConfig.boards.map((board, index) => (
+                      {localJiraConfig.boards.map((board, index) => (
                         <Draggable
                           key={`draggable-${board.id}`}
                           draggableId={`draggable-${board.id}`}
@@ -326,7 +341,11 @@ export const Setting = (): JSX.Element => {
                                 </IconButton>
                               </Grid>
                               <Grid item xs={11}>
-                                <BoardItem board={board} index={index} />
+                                <BoardItem
+                                  board={board}
+                                  index={index}
+                                  onBoardChange={(boards) => handleChangeConfig('boards', boards)}
+                                />
                               </Grid>
                             </Grid>
                           )}

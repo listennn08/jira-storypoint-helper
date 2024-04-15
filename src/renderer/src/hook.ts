@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router'
 import { Buffer } from 'buffer'
 import { from, mergeMap, reduce } from 'rxjs'
 import _ from 'lodash'
@@ -7,6 +8,7 @@ import { CACHE_TIME } from './constants'
 
 import { Issue, Sprint, Ticket, Filter, Board } from './types'
 import { useAppStore } from './store/appStore'
+
 interface UseFetchDataReturn {
   loading: boolean
   error: string
@@ -36,6 +38,7 @@ interface UseFetchDataReturn {
 }
 
 export default function useFetchData(): UseFetchDataReturn {
+  const location = useLocation()
   const jiraConfig = useAppStore((state) => state.jiraConfig)
   const loadedConfig = useAppStore((state) => state.loadedConfig)
   const addAlerts = useAppStore((state) => state.addAlerts)
@@ -65,6 +68,14 @@ export default function useFetchData(): UseFetchDataReturn {
   const [boards, setBoards] = useState<{ sprints: Sprint[]; boardId: string; boardName: string }[]>(
     []
   )
+  const filteredBoards = useMemo(() => {
+    return boards.filter((board) => {
+      if (filter.board.length) {
+        return filter.board.includes(board.boardName)
+      }
+      return true
+    })
+  }, [boards, filter.board])
 
   const [tickets, setTickets] = useState<
     Array<{
@@ -120,7 +131,16 @@ export default function useFetchData(): UseFetchDataReturn {
     [tickets]
   )
   const boardOptions = useMemo(() => Object.keys(boardMap), [boardMap])
-  const sprintOptions = useMemo(() => tickets.map((ticket) => ticket.key), [tickets])
+  const sprintOptions = useMemo(() => {
+    return tickets
+      .filter((ticket) => {
+        if (filter.board.length) {
+          return filter.board.some((board) => ticket.boardTitle.includes(board))
+        }
+        return true
+      })
+      .map((ticket) => ticket.key)
+  }, [tickets, filter.board])
 
   async function request<T>(url: string): Promise<T> {
     const { email, apiKey, baseURL } = jiraConfig
@@ -295,7 +315,7 @@ export default function useFetchData(): UseFetchDataReturn {
     }
 
     let sprintObj: Record<string, Sprint> = {}
-    const $subscriber = from(boards).pipe(
+    const $subscriber = from(filteredBoards).pipe(
       mergeMap(getSprintData),
       mergeMap(processSprintData),
       mergeMap((data) => from(data)),
@@ -312,7 +332,15 @@ export default function useFetchData(): UseFetchDataReturn {
 
     $subscriber.subscribe({
       next: (data) => {
-        sprintObj = data
+        console.log(data)
+        if (filter.board.length) {
+          sprintObj = {
+            ...JSON.parse(localStorage.getItem('sprint-obj') || '{}'),
+            ...data
+          }
+        } else {
+          sprintObj = data
+        }
       },
       complete: () => {
         const sortedSprintObject = orderKeyBySprint(
@@ -321,9 +349,10 @@ export default function useFetchData(): UseFetchDataReturn {
           jiraConfig.sprintStartWord
         )
 
-        
         setTickets(sortedSprintObject)
         setLoading(false)
+
+        localStorage.setItem('sprint-obj', JSON.stringify(sprintObj))
         localStorage.setItem('tickets', JSON.stringify(sortedSprintObject))
         localStorage.setItem('ttl', (Date.now() + CACHE_TIME).toString())
       },
