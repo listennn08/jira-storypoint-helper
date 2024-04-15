@@ -34,7 +34,6 @@ export const Setting = (): JSX.Element => {
   const setJiraConfig = useAppStore((state) => state.setJiraConfig)
   const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
   const addAlerts = useAppStore((state) => state.addAlerts)
-  // const { jiraConfig, setJiraConfig, setAlerts } = useContext(AppContext)
   const [state, setState] = useState({
     activeTab: 0
   })

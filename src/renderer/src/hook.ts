@@ -321,6 +321,7 @@ export default function useFetchData(): UseFetchDataReturn {
           jiraConfig.sprintStartWord
         )
 
+        
         setTickets(sortedSprintObject)
         setLoading(false)
         localStorage.setItem('tickets', JSON.stringify(sortedSprintObject))
@@ -350,10 +351,12 @@ export default function useFetchData(): UseFetchDataReturn {
     if (checkCache()) {
       const tickets = JSON.parse(localStorage.getItem('tickets')!)
       if (!_.isEmpty(tickets)) {
-        addAlerts({
-          severity: 'info',
-          message: 'Data loaded from cache'
-        })
+        if (location.pathname !== '/settings') {
+          addAlerts({
+            severity: 'info',
+            message: 'Data loaded from cache'
+          })
+        }
         setTickets(tickets)
         setLoading(false)
         return

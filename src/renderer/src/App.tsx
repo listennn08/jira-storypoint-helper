@@ -28,14 +28,9 @@ export const App = (): JSX.Element => {
   return (
     <main>
       <Box sx={{ mb: 6, p: 2, minHeight: 'calc(100vh - 56px)' }}>
-        {location.pathname === '/settings' && (
+        <TicketContextProvider>
           <Suspense fallback={<div>Loading...</div>}>{useRoutes(routes)}</Suspense>
-        )}
-        {location.pathname !== '/settings' && (
-          <TicketContextProvider>
-            <Suspense fallback={<div>Loading...</div>}>{useRoutes(routes)}</Suspense>
-          </TicketContextProvider>
-        )}
+        </TicketContextProvider>
       </Box>
 
       <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 999 }}>
