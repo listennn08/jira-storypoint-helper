@@ -163,7 +163,7 @@ export const Setting = (): JSX.Element => {
         }
       }[]
     }
-    setJiraConfigByKey(
+    handleChangeConfig(
       'boards',
       resp.values
         .filter((el) => el.type === 'scrum')
@@ -180,10 +180,10 @@ export const Setting = (): JSX.Element => {
     (result: DropResult) => {
       if (!result.destination) return
 
-      const newBoards = reorder(jiraConfig.boards, result.source.index, result.destination.index)
+      const newBoards = reorder(localJiraConfig.boards, result.source.index, result.destination.index)
       setJiraConfigByKey('boards', newBoards as Board[])
     },
-    [jiraConfig.boards]
+    [localJiraConfig.boards]
   )
 
   useEffect(() => {
