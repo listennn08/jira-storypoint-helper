@@ -2,16 +2,16 @@ import { ChangeEvent, memo } from 'react'
 import { Grid, TextField, IconButton } from '@mui/material'
 import { Board } from '@renderer/types'
 import { Delete } from '@mui/icons-material'
-import { useAppStore } from '@renderer/store/appStore'
 
 interface BoardItemProps {
+  boards: Board[]
   board: Board
   index: number
   onBoardChange: (boards: Board[]) => void
 }
 
-const BoardItem: React.FC<BoardItemProps> = ({ board, index, onBoardChange }: BoardItemProps) => {
-  const boards = useAppStore((state) => state.jiraConfig.boards)
+const BoardItem: React.FC<BoardItemProps> = (props: BoardItemProps) => {
+  const { boards, board, index, onBoardChange } = props
 
   function handleChange(event: ChangeEvent): void {
     const target = event.target as HTMLInputElement

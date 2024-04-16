@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   InputAdornment,
@@ -28,6 +32,8 @@ import { reorder } from '@renderer/utils'
 
 import { Board, JiraConfig } from '@renderer/types'
 import { useAppStore } from '@renderer/store/appStore'
+import { useBlocker } from 'react-router'
+import _ from 'lodash'
 
 export const Setting = (): JSX.Element => {
   const [localJiraConfig, setLocalJiraConfig] = useState<JiraConfig>({
@@ -39,7 +45,6 @@ export const Setting = (): JSX.Element => {
   })
   const jiraConfig = useAppStore((state) => state.jiraConfig)
   const setJiraConfig = useAppStore((state) => state.setJiraConfig)
-  const setJiraConfigByKey = useAppStore((state) => state.setJiraConfigByKey)
   const addAlerts = useAppStore((state) => state.addAlerts)
   const [state, setState] = useState({
     activeTab: 0
@@ -180,8 +185,12 @@ export const Setting = (): JSX.Element => {
     (result: DropResult) => {
       if (!result.destination) return
 
-      const newBoards = reorder(localJiraConfig.boards, result.source.index, result.destination.index)
-      setJiraConfigByKey('boards', newBoards as Board[])
+      const newBoards = reorder(
+        localJiraConfig.boards,
+        result.source.index,
+        result.destination.index
+      )
+      handleChangeConfig('boards', newBoards)
     },
     [localJiraConfig.boards]
   )
@@ -193,6 +202,14 @@ export const Setting = (): JSX.Element => {
       setLocalJiraConfig(JSON.parse(config))
     }
   }, [])
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    return (
+      !_.isEqual(jiraConfig, localJiraConfig) &&
+      currentLocation.pathname === '/settings' &&
+      nextLocation.pathname !== '/settings'
+    )
+  })
 
   return (
     <Box p={2}>
@@ -342,6 +359,7 @@ export const Setting = (): JSX.Element => {
                               </Grid>
                               <Grid item xs={11}>
                                 <BoardItem
+                                  boards={localJiraConfig.boards}
                                   board={board}
                                   index={index}
                                   onBoardChange={(boards) => handleChangeConfig('boards', boards)}
@@ -366,6 +384,27 @@ export const Setting = (): JSX.Element => {
         handleClose={() => setIsDialogOpen(false)}
         handleConfirm={handleExport}
       />
+
+      <Dialog open={blocker.state === 'blocked'}>
+        <DialogTitle>Warning</DialogTitle>
+        <DialogContent>You have unsaved changes. Do you want to leave this page?</DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              blocker?.proceed?.()
+            }}
+          >
+            Leave
+          </Button>
+          <Button
+            onClick={() => {
+              blocker?.reset?.()
+            }}
+          >
+            Stay
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

@@ -80,6 +80,7 @@ export default function useFetchData(): UseFetchDataReturn {
   const [tickets, setTickets] = useState<
     Array<{
       key: string
+      boardKey: string[]
       boardTitle: string[]
       issues: Ticket[]
     }>
@@ -107,10 +108,7 @@ export default function useFetchData(): UseFetchDataReturn {
         if (filter.sprint?.length && !filter.sprint.includes(sprint.key)) {
           return false
         }
-        if (
-          filter.board.length &&
-          !filter.board.some((board) => sprint.boardTitle.includes(board))
-        ) {
+        if (filter.board.length && !filter.board.some((board) => sprint.boardKey.includes(board))) {
           return false
         }
         return true
@@ -135,7 +133,7 @@ export default function useFetchData(): UseFetchDataReturn {
     return tickets
       .filter((ticket) => {
         if (filter.board.length) {
-          return filter.board.some((board) => ticket.boardTitle.includes(board))
+          return filter.board.some((board) => ticket.boardKey.includes(board))
         }
         return true
       })
@@ -197,6 +195,7 @@ export default function useFetchData(): UseFetchDataReturn {
             (sprint: Sprint) => sprint.state === 'active' || sprint.state === 'future'
           ),
           boardId,
+          boardKey: boardMap[boardId].key,
           boardName: boardMap[boardId].name
         }
       })
@@ -282,6 +281,7 @@ export default function useFetchData(): UseFetchDataReturn {
   async function processSprintData(board: { boardId: string; sprints: Sprint[] }): Promise<
     {
       sprint: string
+      boardKey: string
       boardTitle: string
       issues: Ticket[]
     }[]
@@ -294,6 +294,7 @@ export default function useFetchData(): UseFetchDataReturn {
 
       return {
         sprint: sprint.name,
+        boardKey: boardMap[board.boardId].key,
         boardTitle: boardMap[board.boardId].name,
         issues: tickets
       }
@@ -322,6 +323,7 @@ export default function useFetchData(): UseFetchDataReturn {
       reduce((acc, result) => {
         const key = result.sprint
         acc[key] = {
+          boardKey: (acc[key]?.boardKey || []).concat([result.boardKey]),
           boardTitle: (acc[key]?.boardTitle || []).concat([result.boardTitle]),
           issues: (acc[key]?.issues || []).concat(result.issues)
         }
@@ -332,7 +334,6 @@ export default function useFetchData(): UseFetchDataReturn {
 
     $subscriber.subscribe({
       next: (data) => {
-        console.log(data)
         if (filter.board.length) {
           sprintObj = {
             ...JSON.parse(localStorage.getItem('sprint-obj') || '{}'),
@@ -388,7 +389,6 @@ export default function useFetchData(): UseFetchDataReturn {
         }
         setTickets(tickets)
         setLoading(false)
-        return
       }
     }
     getBoardData()

@@ -2,23 +2,14 @@ import { memo, useContext, useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 import { groupByAssignee } from '@renderer/utils'
-import { Ticket } from '@renderer/types'
 import TicketContext from '@renderer/context/TicketContext'
-
-interface StoryPointTableProps {
-  tickets: Array<{
-    key: string
-    boardTitle: string[]
-    issues: Ticket[]
-  }>
-}
 
 interface StoryPointTableData {
   [key: string]: string | number
   assignee: string
 }
 
-const index: React.FC<StoryPointTableProps> = () => {
+const index: React.FC = () => {
   const { tickets } = useContext(TicketContext)
   const [tableData, setTableData] = useState<StoryPointTableData[]>([])
   const [tableHeaders, setTableHeaders] = useState<string[]>([])

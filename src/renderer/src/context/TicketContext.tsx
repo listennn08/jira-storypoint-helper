@@ -104,7 +104,7 @@ export const TicketContextProvider = ({ children }: { children: React.ReactNode 
             >
               {boardMap &&
                 Object.keys(boardMap).map((key) => (
-                  <MenuItem value={boardMap[key].name} key={key}>
+                  <MenuItem value={boardMap[key].key} key={key}>
                     {boardMap[key].name}
                   </MenuItem>
                 ))}

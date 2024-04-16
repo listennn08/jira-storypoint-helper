@@ -1,5 +1,4 @@
-import { Suspense } from 'react'
-import { useLocation, useNavigate, useRoutes } from 'react-router'
+import { Outlet, useLocation, useNavigate } from 'react-router'
 import {
   Box,
   BottomNavigation,
@@ -9,8 +8,6 @@ import {
   AlertTitle
 } from '@mui/material'
 import { Feed, Person, Settings } from '@mui/icons-material'
-
-import routes from '~react-pages'
 
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
@@ -29,7 +26,7 @@ export const App = (): JSX.Element => {
     <main>
       <Box sx={{ mb: 6, p: 2, minHeight: 'calc(100vh - 56px)' }}>
         <TicketContextProvider>
-          <Suspense fallback={<div>Loading...</div>}>{useRoutes(routes)}</Suspense>
+          <Outlet />
         </TicketContextProvider>
       </Box>
 

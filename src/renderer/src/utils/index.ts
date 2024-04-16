@@ -6,6 +6,7 @@ export function orderKeyBySprint<T extends Record<string, unknown>>(
   sprintStartWord: string = ''
 ): Array<{
   key: string
+  boardKey: string[]
   boardTitle: string[]
   issues: Ticket[]
 }> {
@@ -26,6 +27,7 @@ export function orderKeyBySprint<T extends Record<string, unknown>>(
 
   const sprintItems: {
     key: string
+    boardKey: string[]
     boardTitle: string[]
     issues: Ticket[]
   }[] = []
@@ -34,6 +36,7 @@ export function orderKeyBySprint<T extends Record<string, unknown>>(
     sprintItems.push({
       key,
       ...(sprintObj[key] as {
+        boardKey: string[]
         boardTitle: string[]
         issues: Ticket[]
       })
